@@ -10,7 +10,7 @@ import type {
   StackedChartSegment,
 } from "./types/job-order";
 
-type SourceState = "unconfigured" | "loading" | "ready" | "error";
+type SourceState = "loading" | "ready" | "error";
 
 const companyPalette = ["#4F15D6", "#FA8DA0", "#B259CD", "#87755C", "#AEA1C3", "#4F92A6", "#D58D4A", "#7E8D62"];
 const statusPalette = ["#4F15D6", "#2B9A80", "#E3A348", "#E36D8B", "#6D84C5", "#9D79B8", "#70817C"];
@@ -413,7 +413,7 @@ function App() {
 
   const chartEmptyTitle = !dataReady ? "Your analytics will appear here" : "No matching job orders";
   const chartEmptyDescription = !dataReady
-    ? "Connect the job-order data endpoint to populate this visualization."
+    ? "Load job-order records from the configured backend to populate this visualization."
     : "Try widening the date range or clearing one or more filters.";
 
   return (
