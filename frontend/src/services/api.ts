@@ -71,7 +71,7 @@ export async function fetchJobOrders(
     if (
       typeof firstRecord !== "object" ||
       firstRecord === null ||
-      !expectedFields.some((field) => field in firstRecord)
+      !expectedFields.every((field) => field in firstRecord)
     ) {
       throw new Error(
         "The response does not contain the job-order fields required by this dashboard.",
