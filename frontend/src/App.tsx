@@ -16,7 +16,6 @@ const companyPalette = ["#4F15D6", "#FA8DA0", "#B259CD", "#87755C", "#AEA1C3", "
 const statusPalette = ["#4F15D6", "#2B9A80", "#E3A348", "#E36D8B", "#6D84C5", "#9D79B8", "#70817C"];
 const categoryPalette = ["#B259CD", "#4F15D6", "#FA8DA0", "#4F92A6", "#D58D4A", "#7E8D62", "#AEA1C3", "#87755C"];
 
-const endpoint = (import.meta.env.VITE_JOB_ORDERS_ENDPOINT ?? "").trim();
 
 function iconPath(name: string) {
   switch (name) {
@@ -239,7 +238,7 @@ function MetricCard({
 
 function App() {
   const [records, setRecords] = useState<JobOrderRecord[]>([]);
-  const [sourceState, setSourceState] = useState<SourceState>(endpoint ? "loading" : "unconfigured");
+  const [sourceState, setSourceState] = useState<SourceState>("loading");
   const [sourceError, setSourceError] = useState("");
   const [backendHealth, setBackendHealth] = useState<"checking" | "online" | "offline">("checking");
 
@@ -261,13 +260,8 @@ function App() {
       .then((status) => setBackendHealth(status === "ok" ? "online" : "offline"))
       .catch(() => setBackendHealth("offline"));
 
-    if (!endpoint) {
-      setSourceState("unconfigured");
-      return () => controller.abort();
-    }
-
     setSourceState("loading");
-    fetchJobOrders(endpoint, controller.signal)
+    fetchJobOrders(controller.signal)
       .then((data) => {
         setRecords(data);
         setSourceState("ready");
@@ -400,10 +394,9 @@ function App() {
   };
 
   const retryLoad = () => {
-    if (!endpoint) return;
     setSourceState("loading");
     setSourceError("");
-    fetchJobOrders(endpoint)
+    fetchJobOrders()
       .then((data) => {
         setRecords(data);
         setSourceState("ready");
@@ -485,15 +478,15 @@ function App() {
             <div className="heading-date"><Icon name="calendar" size={16} /><span>{new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date())}</span></div>
           </section>
 
-          {sourceState === "unconfigured" || sourceState === "error" ? (
+          {sourceState === "error" ? (
             <section className={`source-notice ${sourceState === "error" ? "source-notice--error" : ""}`} id="data-source">
               <div className="source-notice__icon"><Icon name="activity" size={21} /></div>
               <div className="source-notice__copy">
                 <strong>{sourceState === "error" ? "Could not load job-order data" : "Connect your job-order data source"}</strong>
-                <p>{sourceState === "error" ? sourceError : "The repository currently exposes only a health-check API. Set VITE_JOB_ORDERS_ENDPOINT to your existing job-order endpoint. Until then, the dashboard intentionally shows no fabricated metrics."}</p>
-                {sourceState === "unconfigured" ? <code>VITE_JOB_ORDERS_ENDPOINT=your-existing-api-endpoint</code> : null}
+                <p>{sourceState === "error" ? sourceError : "Check the backend API configuration and connection, then retry. No fabricated metrics are displayed."}</p>
+                
               </div>
-              {sourceState === "error" && endpoint ? <button type="button" className="button button--secondary" onClick={retryLoad}>Retry</button> : null}
+              {sourceState === "error" ? <button type="button" className="button button--secondary" onClick={retryLoad}>Retry</button> : null}
             </section>
           ) : null}
 

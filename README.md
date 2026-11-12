@@ -1,33 +1,33 @@
 # Job Order Analytics
 
-A React + Vite analytics dashboard frontend with a FastAPI backend.
+React + Vite analytics dashboard backed by FastAPI and the CMIIT job-order API.
 
-## Project structure
+## Configure the API
 
-- `backend`: FastAPI application (currently includes a health-check route)
-- `frontend`: React 18 + TypeScript + Vite dashboard
-- `docs`: setup and data integration notes
+The upstream URL is server-side only. From the repository root, copy the example:
 
-## Run locally
+```powershell
+Copy-Item backend/.env.example backend/.env
+```
 
-Backend:
-```bash
+Check `backend/.env` contains `JOB_ORDERS_API_URL=https://cmiitdept.com/mmp/api_get_job_master` and `EXTERNAL_API_TIMEOUT_SECONDS=20`. The real `.env` is ignored by Git. Do not place the upstream URL in a `VITE_` variable.
+
+## Run locally (Windows PowerShell)
+
+Backend terminal:
+```powershell
 cd backend
 python -m venv .venv
-# Activate the virtual environment, then:
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Frontend:
-```bash
+Frontend terminal:
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-## Job-order data
-
-The dashboard reads live records from the endpoint configured by `VITE_JOB_ORDERS_ENDPOINT`. No endpoint is configured by default because the current backend only exposes `/health`; it has no job-order API or database schema yet. See [Dashboard data connection](docs/dashboard-data-connection.md) before wiring the real API.
-
-The UI intentionally uses empty states instead of fabricated analytics until a real data source is connected.
+Open the Vite URL (usually http://localhost:5173). FastAPI runs on http://localhost:8000. See [setup](docs/setup.md) and [data connection](docs/dashboard-data-connection.md).
