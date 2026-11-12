@@ -325,6 +325,29 @@ function App() {
       .map((record) => fieldLabel(record.jo_category, "Unspecified category")),
   ), [dateScoped, companyFilters, statusFilters]);
 
+  // Keep selected values aligned with the currently available dataset.
+  // This prevents stale selections after changing dates or another dimension.
+  useEffect(() => {
+    setCompanyFilters((current) => {
+      const next = current.filter((value) => companyOptions.includes(value));
+      return next.length === current.length ? current : next;
+    });
+  }, [companyOptions]);
+
+  useEffect(() => {
+    setStatusFilters((current) => {
+      const next = current.filter((value) => statusOptions.includes(value));
+      return next.length === current.length ? current : next;
+    });
+  }, [statusOptions]);
+
+  useEffect(() => {
+    setCategoryFilters((current) => {
+      const next = current.filter((value) => categoryOptions.includes(value));
+      return next.length === current.length ? current : next;
+    });
+  }, [categoryOptions]);
+
   const filteredRecords = useMemo(() => dateScoped.filter((record) =>
     (companyFilters.length === 0 || companyFilters.includes(fieldLabel(record.req_comp, "Unspecified company"))) &&
     (statusFilters.length === 0 || statusFilters.includes(fieldLabel(record.req_current_status, "Unspecified status"))) &&
