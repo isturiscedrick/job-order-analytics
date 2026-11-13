@@ -196,23 +196,31 @@ export function StackedBarChart({ groups, selectedCategories = [], onSelect }: S
               <strong>{group.total.toLocaleString()}</strong>
             </div>
             <div className="stacked-track" role="group" aria-label={`${group.label}: ${group.total} job orders by category`}>
-              {group.segments.map((segment) => (
-                <button
-                  type="button"
-                  key={segment.label}
-                  className={`stacked-track__fill ${hovered === segment.label ? "is-highlighted" : ""} ${selectedCategories.length > 0 && !selectedCategories.includes(segment.label) ? "is-dimmed" : ""} ${selectedCategories.includes(segment.label) ? "is-selected" : ""}`}
-                  style={{ width: `${segment.percentage}%`, backgroundColor: segment.color }}
-                  title={`${segment.label}: ${segment.value} (${segment.percentage.toFixed(1)}%)`}
-                  aria-label={`${group.label}, ${segment.label}: ${segment.value} job orders. Filter by category.`}
-                  onMouseEnter={() => setHovered(segment.label)}
-                  onMouseLeave={() => setHovered(null)}
-                  onFocus={() => setHovered(segment.label)}
-                  onBlur={() => setHovered(null)}
-                  onClick={() => onSelect(segment.label)}
-                >
-                  {segment.percentage >= 9 ? segment.value.toLocaleString() : null}
-                </button>
-              ))}
+              {group.segments
+                // A category selection hides the other segments, but retains
+                // each visible segment's percentage of the complete company
+                // total. Rendering the selected segments first naturally
+                // aligns them to the left without stretching them to 100%.
+                .filter((segment) =>
+                  selectedCategories.length === 0 || selectedCategories.includes(segment.label),
+                )
+                .map((segment) => (
+                  <button
+                    type="button"
+                    key={segment.label}
+                    className={`stacked-track__fill ${hovered === segment.label ? "is-highlighted" : ""} ${selectedCategories.includes(segment.label) ? "is-selected" : ""}`}
+                    style={{ width: `${segment.percentage}%`, backgroundColor: segment.color }}
+                    title={`${segment.label}: ${segment.value} (${segment.percentage.toFixed(1)}% of company total)`}
+                    aria-label={`${group.label}, ${segment.label}: ${segment.value} job orders, ${segment.percentage.toFixed(1)}% of company total. Filter by category.`}
+                    onMouseEnter={() => setHovered(segment.label)}
+                    onMouseLeave={() => setHovered(null)}
+                    onFocus={() => setHovered(segment.label)}
+                    onBlur={() => setHovered(null)}
+                    onClick={() => onSelect(segment.label)}
+                  >
+                    {segment.percentage >= 9 ? segment.value.toLocaleString() : null}
+                  </button>
+                ))}
             </div>
           </div>
         ))}
@@ -221,7 +229,7 @@ export function StackedBarChart({ groups, selectedCategories = [], onSelect }: S
         {Array.from(legend.entries()).map(([label, color]) => (
           <button
             type="button"
-            className={`chart-legend__item ${hovered === label ? "is-highlighted" : ""} ${selectedCategories.length > 0 && !selectedCategories.includes(label) ? "is-dimmed" : ""} ${selectedCategories.includes(label) ? "is-selected" : ""}`}
+            className={`chart-legend__item ${hovered === label ? "is-highlighted" : ""} ${selectedCategories.includes(label) ? "is-selected" : ""}`}
             key={label}
             onMouseEnter={() => setHovered(label)}
             onMouseLeave={() => setHovered(null)}
