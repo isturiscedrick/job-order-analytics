@@ -368,13 +368,15 @@ function App() {
     [nonCancelledRecords],
   );
 
+  // Status analysis includes every filtered record, including Cancelled.
+  // Company distribution intentionally continues to use non-cancelled records.
   const statusData = useMemo(
     () => groupCounts(
-      nonCancelledRecords,
+      filteredRecords,
       (record) => fieldLabel(record.req_current_status, "Unspecified status"),
       statusPalette,
     ),
-    [nonCancelledRecords],
+    [filteredRecords],
   );
 
   const categoryData = useMemo(
@@ -539,8 +541,8 @@ function App() {
                 {!dataReady ? <div className="chart-skeleton"><i /><i /><i /></div> : companyData.length > 0 ? <DonutChart data={companyData} total={companyData.reduce((sum, item) => sum + item.value, 0)} onSelect={(label) => { selectCompany(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
               </ChartCard>
 
-              <ChartCard title="Job Orders by Status" description="Compare the volume of non-cancelled job orders in each status." action="STATUS MIX">
-                {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : statusData.length > 0 ? <StatusBarChart data={statusData} onSelect={(label) => { selectStatus(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={sourceState === "ready" && filteredRecords.length > 0 ? "Cancelled records are excluded from this chart by design." : chartEmptyDescription} />}
+              <ChartCard title="Job Orders by Status" description="Compare all filtered job orders by current status, including cancelled orders." action="STATUS MIX">
+                {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : statusData.length > 0 ? <StatusBarChart data={statusData} onSelect={(label) => { selectStatus(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
               </ChartCard>
 
               <div className="charts-grid__wide">
@@ -549,7 +551,7 @@ function App() {
                 </ChartCard>
               </div>
             </div>
-            <p className="analytics-note"><span>i</span> Cancelled job orders are excluded from company distribution and status comparison. Category analysis includes all statuses.</p>
+            <p className="analytics-note"><span>i</span> Status and category analysis include all filtered job orders, including cancelled records. Company distribution intentionally excludes cancelled job orders.</p>
           </section> : null}
 
           {page === "reports" ? <section className="analytics-section reports-section">
