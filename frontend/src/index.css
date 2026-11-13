@@ -494,3 +494,10 @@ body { color: var(--ink); background: var(--canvas); }
 @media(prefers-reduced-motion:reduce) {
  .status-bar-row__fill { animation:none !important; }
 }
+
+
+/* Category selection highlights segments without changing their full-total widths. */
+.stacked-track__fill.is-dimmed { opacity: .32; }
+.stacked-track__fill.is-selected { opacity: 1; filter: saturate(1.08) brightness(1.02); }
+.chart-legend__item.is-dimmed { opacity: .42; }
+.chart-legend__item.is-selected { opacity: 1; font-weight: 700; }
