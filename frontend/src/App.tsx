@@ -240,6 +240,20 @@ function App() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [page, setPage] = useState(() => window.location.pathname === "/breakdowns" ? "breakdowns" : window.location.pathname === "/reports" ? "reports" : "dashboard");
+
+  useEffect(() => {
+    if (window.location.pathname === "/") window.history.replaceState({}, "", "/dashboard");
+    const onPopState = () => setPage(window.location.pathname === "/breakdowns" ? "breakdowns" : window.location.pathname === "/reports" ? "reports" : "dashboard");
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const navigate = (next: "dashboard" | "breakdowns" | "reports") => {
+    window.history.pushState({}, "", next === "dashboard" ? "/dashboard" : next === "breakdowns" ? "/breakdowns" : "/reports");
+    setPage(next); setMobileNavOpen(false); setOpenDropdown(null); window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -379,6 +393,7 @@ function App() {
     setCompanyFilters([]);
     setStatusFilters([]);
     setCategoryFilters([]);
+    setOpenDropdown(null);
   };
 
   const retryLoad = () => {
@@ -410,7 +425,7 @@ function App() {
       <aside className={`sidebar ${collapsed ? "sidebar--collapsed" : ""} ${mobileNavOpen ? "sidebar--mobile-open" : ""}`}>
         <div className="sidebar__brand">
           <div className="brand-mark"><span /><span /><span /></div>
-          {!collapsed ? <div className="brand-copy"><strong>JO<span>INSIGHT</span></strong><small>OPERATIONS ANALYTICS</small></div> : null}
+          {!collapsed ? <div className="brand-copy"><strong>JOB<span> INSIGHT</span></strong><small>OPERATIONS ANALYTICS</small></div> : null}
           <button type="button" className="sidebar__collapse" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
             <Icon name="chevron" size={16} />
           </button>
@@ -418,19 +433,9 @@ function App() {
 
         <div className="sidebar__section-label">{!collapsed ? "WORKSPACE" : " "}</div>
         <nav className="sidebar-nav">
-          <button type="button" className="sidebar-nav__item is-active" title="Overview" onClick={() => setMobileNavOpen(false)}>
-            <Icon name="grid" />
-            {!collapsed ? <span>Overview</span> : null}
-            <i />
-          </button>
-          <button type="button" className="sidebar-nav__item" title="Job order analytics" onClick={() => { document.getElementById("analytics")?.scrollIntoView({ behavior: "smooth" }); setMobileNavOpen(false); }}>
-            <Icon name="orders" />
-            {!collapsed ? <span>Job order analytics</span> : null}
-          </button>
-          <button type="button" className="sidebar-nav__item" title="Data source" onClick={() => { document.getElementById("data-source")?.scrollIntoView({ behavior: "smooth" }); setMobileNavOpen(false); }}>
-            <Icon name="activity" />
-            {!collapsed ? <span>Data source</span> : null}
-          </button>
+          <button type="button" className={"sidebar-nav__item " + (page === "dashboard" ? "is-active" : "")} title="Overview" onClick={() => navigate("dashboard")}><Icon name="grid" />{!collapsed ? <span>Overview</span> : null}<i /></button>
+          <button type="button" className={"sidebar-nav__item " + (page === "breakdowns" ? "is-active" : "")} title="Breakdowns" onClick={() => navigate("breakdowns")}><Icon name="orders" />{!collapsed ? <span>Breakdowns</span> : null}<i /></button>
+          <button type="button" className={"sidebar-nav__item " + (page === "reports" ? "is-active" : "")} title="Reports" onClick={() => navigate("reports")}><Icon name="activity" />{!collapsed ? <span>Reports</span> : null}<i /></button>
         </nav>
 
         <div className="sidebar__bottom">
@@ -440,7 +445,7 @@ function App() {
               <div><strong>API connection</strong><small>{backendHealth === "online" ? "Backend available" : backendHealth === "checking" ? "Checking backend…" : "Backend unavailable"}</small></div>
             ) : null}
           </div>
-          {!collapsed ? <div className="sidebar-footer"><span>JO Insight</span><span>v0.1</span></div> : null}
+          {!collapsed ? <div className="sidebar-footer"><span>Job Order Insight</span><span>v0.1</span></div> : null}
         </div>
       </aside>
 
@@ -448,11 +453,11 @@ function App() {
         <header className="topbar">
           <div className="topbar__left">
             <button type="button" className="mobile-menu-button" onClick={() => setMobileNavOpen(true)} aria-label="Open navigation"><Icon name="menu" /></button>
-            <div className="breadcrumb"><span>Workspace</span><Icon name="chevron" size={13} /><strong>Overview</strong></div>
+            <div className="breadcrumb"><span>Workspace</span><Icon name="chevron" size={13} /><strong>{page === "dashboard" ? "Overview" : page === "breakdowns" ? "Breakdowns" : "Reports"}</strong></div>
           </div>
           <div className="topbar__right">
             <span className={`topbar-status topbar-status--${sourceState}`}><i />{sourceState === "ready" ? "Data connected" : sourceState === "loading" ? "Loading data" : sourceState === "error" ? "Data source issue" : "Data source not set"}</span>
-            <div className="avatar" aria-label="Workspace account">JO</div>
+            <div className="avatar" aria-label="Workspace account">JA</div>
           </div>
         </header>
 
@@ -460,8 +465,8 @@ function App() {
           <section className="page-heading">
             <div>
               <div className="page-kicker"><span className="page-kicker__line" /> JOB ORDER INTELLIGENCE</div>
-              <h1>Analytics overview<span>.</span></h1>
-              <p>Monitor job order distribution, company activity, and operational status in one place.</p>
+              <h1>{page === "dashboard" ? "Job Order Overview" : page === "breakdowns" ? "Job Order Breakdowns" : "Job Order Reports"}<span>.</span></h1>
+              <p>{page === "dashboard" ? "A high-level view of job order activity and operational status." : page === "breakdowns" ? "Explore detailed combinations across companies, statuses, and categories." : "Review and export the current job order distribution."}</p>
             </div>
             <div className="heading-date"><Icon name="calendar" size={16} /><span>{new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date())}</span></div>
           </section>
@@ -505,7 +510,7 @@ function App() {
               ) : null}
               <FilterDropdown title="Company" options={companyOptions} selected={companyFilters} onChange={setCompanyFilters} />
               <FilterDropdown title="Status" options={statusOptions} selected={statusFilters} onChange={setStatusFilters} />
-              <FilterDropdown title="JO category" options={categoryOptions} selected={categoryFilters} onChange={setCategoryFilters} />
+              <FilterDropdown title="Job Order category" options={categoryOptions} selected={categoryFilters} onChange={setCategoryFilters} />
             </div>
             {hasFilters ? (
               <div className="active-filter-summary">
