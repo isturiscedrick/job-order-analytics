@@ -186,16 +186,31 @@ export function StackedBarChart({ groups, selectedCategories = [], onSelect }: S
   const legend = new Map<string, string>();
   groups.forEach((group) => group.segments.forEach((segment) => legend.set(segment.label, segment.color)));
 
+  // Rank by selected-category count when a category filter is active.
+  // Otherwise, keep the overall company-total ranking.
+  const rankedGroups = groups
+    .map((group) => ({
+      group,
+      displayedTotal: selectedCategories.length > 0
+        ? group.segments
+            .filter((segment) => selectedCategories.includes(segment.label))
+            .reduce((sum, segment) => sum + segment.value, 0)
+        : group.total,
+    }))
+    .sort((a, b) =>
+      b.displayedTotal - a.displayedTotal || a.group.label.localeCompare(b.group.label),
+    );
+
   return (
     <div className="stacked-chart">
       <div className="stacked-chart__rows">
-        {groups.map((group) => (
+        {rankedGroups.map(({ group, displayedTotal }) => (
           <div className="stacked-row" key={group.label}>
             <div className="stacked-row__meta">
               <span title={group.label}>{group.label}</span>
-              <strong>{group.total.toLocaleString()}</strong>
+              <strong title={selectedCategories.length > 0 ? "Selected category total for this company" : "Total job orders for this company"}>{displayedTotal.toLocaleString()}</strong>
             </div>
-            <div className="stacked-track" role="group" aria-label={`${group.label}: ${group.total} job orders by category`}>
+            <div className="stacked-track" role="group" aria-label={`${group.label}: ${displayedTotal} job orders in ${selectedCategories.length > 0 ? "selected categories" : "all categories"}`}>
               {group.segments
                 // A category selection hides the other segments, but retains
                 // each visible segment's percentage of the complete company
