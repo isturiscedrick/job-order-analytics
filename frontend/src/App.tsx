@@ -483,7 +483,7 @@ function App() {
             </section>
           ) : null}
 
-          <section className="filter-section" aria-label="Dashboard filters">
+          {page === "breakdowns" ? <section className="filter-section" aria-label="Dashboard filters">
             <div className="filter-section__top">
               <div className="filter-heading"><div className="filter-heading__icon"><Icon name="filter" size={17} /></div><div><strong>Filters</strong><span>Refine your dashboard view</span></div></div>
               <button type="button" className="mobile-filter-toggle" onClick={() => setFiltersOpen((value) => !value)}><Icon name="filter" size={16} /> Filters {hasFilters ? <b>{[companyFilters, statusFilters, categoryFilters].reduce((sum, values) => sum + values.length, datePreset !== "all" ? 1 : 0)}</b> : null}</button>
@@ -508,9 +508,9 @@ function App() {
                   <label><span>To</span><input type="date" value={customEnd} min={customStart || undefined} onChange={(event) => setCustomEnd(event.target.value)} /></label>
                 </div>
               ) : null}
-              <FilterDropdown title="Company" options={companyOptions} selected={companyFilters} onChange={setCompanyFilters} />
-              <FilterDropdown title="Status" options={statusOptions} selected={statusFilters} onChange={setStatusFilters} />
-              <FilterDropdown title="Job Order category" options={categoryOptions} selected={categoryFilters} onChange={setCategoryFilters} />
+              <FilterDropdown title="Company" options={companyOptions} selected={companyFilters} onChange={setCompanyFilters} open={openDropdown === "company"} onOpenChange={(value) => setOpenDropdown(value ? "company" : null)} />
+              <FilterDropdown title="Status" options={statusOptions} selected={statusFilters} onChange={setStatusFilters} open={openDropdown === "status"} onOpenChange={(value) => setOpenDropdown(value ? "status" : null)} />
+              <FilterDropdown title="Job Order category" options={categoryOptions} selected={categoryFilters} onChange={setCategoryFilters} open={openDropdown === "category"} onOpenChange={(value) => setOpenDropdown(value ? "category" : null)} />
             </div>
             {hasFilters ? (
               <div className="active-filter-summary">
@@ -521,7 +521,7 @@ function App() {
                 {datePreset !== "all" ? <span className="filter-chip">{datePreset === "custom" ? "Custom dates" : datePreset === "last7" ? "Last 7 days" : datePreset === "last30" ? "Last 30 days" : datePreset === "thisMonth" ? "This month" : datePreset === "lastMonth" ? "Last month" : "Today"}</span> : null}
               </div>
             ) : null}
-          </section>
+          </section> : null}
 
           <section className="metrics-grid" aria-label="Job order key performance indicators">
             <MetricCard title="Total job orders" value={dataReady ? filteredRecords.length : null} detail="All statuses in selection" icon="orders" tone="metric-card__icon--purple" />
@@ -530,7 +530,7 @@ function App() {
             <MetricCard title="Companies" value={dataReady ? companyCount : null} detail="Distinct companies in selection" icon="building" tone="metric-card__icon--amber" />
           </section>
 
-          <section className="analytics-section" id="analytics">
+          {page !== "reports" ? <section className="analytics-section" id="analytics">
             <div className="section-heading">
               <div><span className="eyebrow">DATA VISUALIZATION</span><h2>Job order breakdown</h2><p>Explore how work is distributed across companies, statuses, and categories.</p></div>
               <div className="record-count"><span className="record-count__dot" />{dataReady ? `${filteredRecords.length.toLocaleString()} records` : "Awaiting data"}</div>
@@ -552,7 +552,22 @@ function App() {
               </div>
             </div>
             <p className="analytics-note"><span>i</span> Cancelled job orders are excluded from company distribution and status comparison. Category analysis includes all statuses.</p>
-          </section>
+          </section> : null}
+
+          {page === "reports" ? <section className="analytics-section reports-section">
+            <div className="section-heading"><div><span className="eyebrow">EXPORTABLE SUMMARY</span><h2>Company distribution report</h2><p>Aggregated non-cancelled job orders in the current dataset.</p></div>
+              <button type="button" className="button button--primary" onClick={() => {
+                const rows = [["Company", "Non-cancelled job orders"], ...companyData.map(item => [item.label, String(item.value)])];
+                const csv = rows.map(row => row.map(value => '"' + value.replace(/"/g, '""') + '"').join(",")).join("\r\n");
+                const link = document.createElement("a"); const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+                link.href = url; link.download = "job-order-distribution.csv"; link.click(); URL.revokeObjectURL(url);
+              }}>Export CSV</button>
+            </div>
+            <div className="report-table-wrap"><table className="report-table"><thead><tr><th>Company</th><th>Non-cancelled job orders</th><th>Share</th></tr></thead><tbody>
+              {companyData.map(item => <tr key={item.label}><td>{item.label}</td><td>{item.value.toLocaleString()}</td><td>{((item.value / Math.max(1, nonCancelledCount)) * 100).toFixed(1)}%</td></tr>)}
+              {companyData.length === 0 ? <tr><td colSpan={3}>No report data is available.</td></tr> : null}
+            </tbody></table></div>
+          </section> : null}
 
           <footer className="page-footer">
             <span>JO Insight <span>·</span> Job Order Analytics</span>
