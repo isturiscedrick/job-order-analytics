@@ -579,7 +579,9 @@ function App() {
 
           {page !== "reports" ? <section className="analytics-section" id="analytics">
             <div className="section-heading">
-              <div><span className="eyebrow">DATA VISUALIZATION</span><h2>{page === "dashboard" ? "Fleet activity at a glance" : "Job order breakdown"}</h2><p>Explore how work is distributed across companies, statuses, and categories.</p></div>
+              {page === "dashboard" ? (
+                <div><span className="eyebrow">DATA VISUALIZATION</span><h2>Fleet activity at a glance</h2><p>Explore how work is distributed across companies, statuses, and categories.</p></div>
+              ) : null}
               <div className="record-count"><span className="record-count__dot" />{dataReady ? `${filteredRecords.length.toLocaleString()} records` : "Awaiting data"}</div>
             </div>
 
