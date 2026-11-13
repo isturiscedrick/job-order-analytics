@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type {
   ChartDatum,
   StackedChartGroup,
@@ -137,100 +137,101 @@ export function DonutChart({ data, total, onSelect }: DonutChartProps) {
 }
 
 
-interface MultiDonutChartProps {
-  groups: StackedChartGroup[];
+interface StatusBarChartProps {
+  data: ChartDatum[];
   onSelect: (label: string) => void;
-  kind: "status" | "category";
 }
 
-export function MultiDonutChart({ groups, onSelect, kind }: MultiDonutChartProps) {
+export function StatusBarChart({ data, onSelect }: StatusBarChartProps) {
+  const maxValue = Math.max(1, ...data.map((item) => item.value));
   const [hovered, setHovered] = useState<string | null>(null);
-  const circumference = 2 * Math.PI * 59;
-  const legend = useMemo(() => {
-    const seen = new Map<string, string>();
-    groups.forEach((group) => group.segments.forEach((segment) => seen.set(segment.label, segment.color)));
-    return Array.from(seen.entries()).map(([label, color]) => ({ label, color }));
-  }, [groups]);
 
   return (
-    <div className="multi-donut-chart">
-      <div className="multi-donut-chart__grid">
-        {groups.map((group) => {
-          let offset = 0;
-          return (
-            <article className="multi-donut-item" key={group.label}>
-              <div className="multi-donut-item__heading">
-                <strong title={group.label}>{group.label}</strong>
-                <span>{group.total.toLocaleString()}</span>
-              </div>
-              <div className="multi-donut-item__visual">
-                <svg viewBox="0 0 170 170" role="img" aria-label={`${group.label}: ${group.total} job orders by ${kind}`}>
-                  <circle cx="85" cy="85" r="59" fill="none" stroke="#f0edf1" strokeWidth="22" />
-                  {group.segments.map((segment) => {
-                    const dash = group.total > 0 ? (segment.value / group.total) * circumference : 0;
-                    const currentOffset = offset;
-                    offset += dash;
-                    return (
-                      <circle
-                        key={segment.label}
-                        className={`donut-segment ${hovered === segment.label ? "is-highlighted" : ""}`}
-                        cx="85"
-                        cy="85"
-                        r="59"
-                        fill="none"
-                        stroke={segment.color}
-                        strokeWidth={hovered === segment.label ? 27 : 22}
-                        strokeDasharray={`${dash} ${circumference - dash}`}
-                        strokeDashoffset={-currentOffset}
-                        transform="rotate(-90 85 85)"
-                        tabIndex={0}
-                        role="button"
-                        aria-label={`${group.label}, ${segment.label}: ${segment.value} job orders`}
-                        onMouseEnter={() => setHovered(segment.label)}
-                        onMouseLeave={() => setHovered(null)}
-                        onFocus={() => setHovered(segment.label)}
-                        onBlur={() => setHovered(null)}
-                        onClick={() => onSelect(segment.label)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            onSelect(segment.label);
-                          }
-                        }}
-                      >
-                        <title>{segment.label}: {segment.value} ({segment.percentage.toFixed(1)}%)</title>
-                      </circle>
-                    );
-                  })}
-                </svg>
-                <div className="multi-donut-item__center">
-                  <span>Job Orders</span>
-                  <strong>{group.total.toLocaleString()}</strong>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-      <div className="chart-legend multi-donut-chart__legend">
-        {legend.map((item) => (
-          <button
-            className={`chart-legend__item ${hovered === item.label ? "is-highlighted" : ""}`}
-            type="button"
-            key={item.label}
-            onMouseEnter={() => setHovered(item.label)}
-            onMouseLeave={() => setHovered(null)}
-            onClick={() => onSelect(item.label)}
-          >
-            <span style={{ backgroundColor: item.color }} />
-            {item.label}
-          </button>
-        ))}
-      </div>
-      <p className="chart-footnote">
-        Select a {kind} segment or legend item to filter the dashboard.
-      </p>
+    <div className="status-bar-chart">
+      {data.map((item) => (
+        <button
+          type="button"
+          className={`status-bar-row ${hovered === item.label ? "is-highlighted" : ""}`}
+          key={item.label}
+          onMouseEnter={() => setHovered(item.label)}
+          onMouseLeave={() => setHovered(null)}
+          onFocus={() => setHovered(item.label)}
+          onBlur={() => setHovered(null)}
+          onClick={() => onSelect(item.label)}
+          aria-label={`${item.label}: ${item.value} job orders. Filter by this status.`}
+        >
+          <span className="status-bar-row__label" title={item.label}>{item.label}</span>
+          <span className="status-bar-row__track">
+            <span
+              className="status-bar-row__fill"
+              style={{ width: `${(item.value / maxValue) * 100}%`, backgroundColor: item.color }}
+            />
+          </span>
+          <strong className="status-bar-row__value">{item.value.toLocaleString()}</strong>
+        </button>
+      ))}
+      <p className="chart-footnote">Select a status bar to filter the dashboard.</p>
     </div>
   );
 }
 
+interface StackedBarChartProps {
+  groups: StackedChartGroup[];
+  onSelect: (label: string) => void;
+}
+
+export function StackedBarChart({ groups, onSelect }: StackedBarChartProps) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const legend = new Map<string, string>();
+  groups.forEach((group) => group.segments.forEach((segment) => legend.set(segment.label, segment.color)));
+
+  return (
+    <div className="stacked-chart">
+      <div className="stacked-chart__rows">
+        {groups.map((group) => (
+          <div className="stacked-row" key={group.label}>
+            <div className="stacked-row__meta">
+              <span title={group.label}>{group.label}</span>
+              <strong>{group.total.toLocaleString()}</strong>
+            </div>
+            <div className="stacked-track" role="group" aria-label={`${group.label}: ${group.total} job orders by category`}>
+              {group.segments.map((segment) => (
+                <button
+                  type="button"
+                  key={segment.label}
+                  className={`stacked-track__fill ${hovered === segment.label ? "is-highlighted" : ""}`}
+                  style={{ width: `${segment.percentage}%`, backgroundColor: segment.color }}
+                  title={`${segment.label}: ${segment.value} (${segment.percentage.toFixed(1)}%)`}
+                  aria-label={`${group.label}, ${segment.label}: ${segment.value} job orders. Filter by category.`}
+                  onMouseEnter={() => setHovered(segment.label)}
+                  onMouseLeave={() => setHovered(null)}
+                  onFocus={() => setHovered(segment.label)}
+                  onBlur={() => setHovered(null)}
+                  onClick={() => onSelect(segment.label)}
+                >
+                  {segment.percentage >= 9 ? segment.value.toLocaleString() : null}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="chart-legend">
+        {Array.from(legend.entries()).map(([label, color]) => (
+          <button
+            type="button"
+            className={`chart-legend__item ${hovered === label ? "is-highlighted" : ""}`}
+            key={label}
+            onMouseEnter={() => setHovered(label)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => onSelect(label)}
+          >
+            <span style={{ backgroundColor: color }} />
+            {label}
+          </button>
+        ))}
+      </div>
+      <p className="chart-footnote">Select a category segment or legend item to filter the dashboard.</p>
+    </div>
+  );
+}
