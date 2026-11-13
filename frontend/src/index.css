@@ -436,3 +436,6 @@ body { color: var(--ink); background: var(--canvas); }
 .overview-date-range input { width:140px; height:30px; padding:0 7px; border:1px solid #e3e7ed; border-radius:7px; color:#344054; background:#fff; font:inherit; font-size:10px; }
 .overview-date-range button { height:30px; padding:0 9px; border:1px solid #f0e2c8; border-radius:7px; color:#94641c; background:#fff8ec; font-size:10px; font-weight:700; }
 @media(max-width:600px) { .overview-date-range { width:100%; flex-wrap:wrap; } .overview-date-range label { flex:1; min-width:0; } .overview-date-range input { width:100%; } }
+
+.skeleton--table { display:block; width:65%; height:13px; }
+.report-table td .skeleton--table { margin:2px 0; }
