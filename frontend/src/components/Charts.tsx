@@ -110,7 +110,7 @@ export function DonutChart({ data, total, onSelect }: DonutChartProps) {
           })}
         </svg>
         <div className="donut-center">
-          <span>Total orders</span>
+          <span>Total Job Orders</span>
           <strong>{total.toLocaleString()}</strong>
           <small>in selection</small>
         </div>
