@@ -413,13 +413,25 @@ function App() {
     [filteredRecords],
   );
 
+  // Category selection is a highlight/filter for the rest of the dashboard,
+  // but this composition chart must retain every category in each company's
+  // denominator. Apply date, company, and status filters; exclude only the
+  // selected category filter from this chart's source records.
+  const categoryChartRecords = useMemo(
+    () => dateScoped.filter((record) =>
+      (companyFilters.length === 0 || companyFilters.includes(fieldLabel(record.req_comp, "Unspecified company"))) &&
+      (statusFilters.length === 0 || statusFilters.includes(fieldLabel(record.req_current_status, "Unspecified status"))),
+    ),
+    [dateScoped, companyFilters, statusFilters],
+  );
+
   const categoryData = useMemo(
     () => groupedSegments(
-      filteredRecords,
+      categoryChartRecords,
       (record) => fieldLabel(record.req_comp, "Unspecified company"),
       (record) => fieldLabel(record.jo_category, "Unspecified category"),
     ),
-    [filteredRecords],
+    [categoryChartRecords],
   );
 
   const cancelledCount = filteredRecords.filter(isCancelled).length;
@@ -580,7 +592,7 @@ function App() {
 
               <div className="charts-grid__wide">
                 <ChartCard title="Job Orders by Category" description="Compare total job orders and category composition for each company. Cancelled records remain included." action="CATEGORY MIX">
-                  {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : categoryData.length > 0 ? <StackedBarChart groups={categoryData} onSelect={(label) => { selectCategory(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
+                  {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : categoryData.length > 0 ? <StackedBarChart groups={categoryData} selectedCategories={categoryFilters} onSelect={(label) => { selectCategory(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
                 </ChartCard>
               </div>
             </div>
