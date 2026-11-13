@@ -556,7 +556,7 @@ function App() {
           </section> : null}
 
           <footer className="page-footer">
-            <span>JO Insight <span>·</span> Job Order Analytics</span>
+            <span>Job Order Insight <span>·</span> Job Order Analytics</span>
             <span>Metrics reflect the selected filters and connected records.</span>
           </footer>
         </div>
