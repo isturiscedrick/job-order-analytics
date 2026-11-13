@@ -127,7 +127,9 @@ function groupCounts(
   const colorByLabel = new Map(
     uniqueSorted(Array.from(counts.keys())).map((label, index) => [
       label,
-      palette[index % palette.length],
+      label.trim().toLocaleLowerCase() === "cancelled"
+        ? "#D64545"
+        : palette[index % palette.length],
     ]),
   );
 
