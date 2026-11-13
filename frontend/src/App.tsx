@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChartCard, DonutChart, EmptyChart, StackedBarChart } from "./components/Charts";
+import { ChartCard, DonutChart, EmptyChart, MultiDonutChart } from "./components/Charts";
 import { fetchHealth, fetchJobOrders } from "./services/api";
 import type {
   ChartDatum,
@@ -108,14 +108,6 @@ function isCancelled(record: JobOrderRecord): boolean {
   return (record.req_current_status ?? "").trim().toLocaleLowerCase() === "cancelled";
 }
 
-function stableColor(label: string, palette: string[]): string {
-  let hash = 0;
-  for (let index = 0; index < label.length; index += 1) {
-    hash = (hash * 31 + label.charCodeAt(index)) | 0;
-  }
-  return palette[Math.abs(hash) % palette.length];
-}
-
 function uniqueSorted(values: string[]): string[] {
   return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
 }
@@ -159,6 +151,14 @@ function groupedSegments(
     groups.set(group, segmentCounts);
   });
 
+  // Give each status/category one consistent palette color across every company.
+  const segmentLabels = uniqueSorted(
+    Array.from(groups.values()).flatMap((counts) => Array.from(counts.keys())),
+  );
+  const colorByLabel = new Map(
+    segmentLabels.map((label, index) => [label, palette[index % palette.length]]),
+  );
+
   return Array.from(groups.entries())
     .map(([label, counts]) => {
       const total = Array.from(counts.values()).reduce((sum, value) => sum + value, 0);
@@ -166,7 +166,7 @@ function groupedSegments(
         .map(([segmentLabel, value]) => ({
           label: segmentLabel,
           value,
-          color: stableColor(segmentLabel, palette),
+          color: colorByLabel.get(segmentLabel) ?? palette[0],
           percentage: total > 0 ? (value / total) * 100 : 0,
         }))
         .sort((a, b) => b.value - a.value);
@@ -541,12 +541,12 @@ function App() {
               </ChartCard>
 
               <ChartCard title="Company by status" description="Compare non-cancelled job order statuses across companies." action="STATUS MIX">
-                {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : statusData.length > 0 ? <StackedBarChart groups={statusData} kind="status" onSelect={(label) => { selectStatus(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={sourceState === "ready" && filteredRecords.length > 0 ? "Cancelled records are excluded from this chart by design." : chartEmptyDescription} />}
+                {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : statusData.length > 0 ? <MultiDonutChart groups={statusData} kind="status" onSelect={(label) => { selectStatus(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={sourceState === "ready" && filteredRecords.length > 0 ? "Cancelled records are excluded from this chart by design." : chartEmptyDescription} />}
               </ChartCard>
 
               <div className="charts-grid__wide">
                 <ChartCard title="Company by job order category" description="Compare category volume for each company. Cancelled records remain included in this view." action="CATEGORY MIX">
-                  {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : categoryData.length > 0 ? <StackedBarChart groups={categoryData} kind="category" onSelect={(label) => { selectCategory(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
+                  {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : categoryData.length > 0 ? <MultiDonutChart groups={categoryData} kind="category" onSelect={(label) => { selectCategory(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
                 </ChartCard>
               </div>
             </div>
