@@ -152,6 +152,19 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Refurbish MC": "#7B83BD",
 };
 
+function categoryColor(label: string): string {
+  const knownColor = CATEGORY_COLORS[label];
+  if (knownColor) return knownColor;
+
+  // Keep any additional API category's fallback color tied to its label,
+  // not its position in the filtered category list.
+  let hash = 0;
+  for (let index = 0; index < label.length; index += 1) {
+    hash = (hash * 31 + label.charCodeAt(index)) >>> 0;
+  }
+  return categoryPalette[hash % categoryPalette.length];
+}
+
 function groupedSegments(
   records: JobOrderRecord[],
   groupField: (record: JobOrderRecord) => string,
@@ -182,12 +195,12 @@ function groupedSegments(
   return Array.from(groups.entries())
     .map(([label, counts]) => {
       const total = Array.from(counts.values()).reduce((sum, value) => sum + value, 0);
-      const segments: StackedChartSegment[] = orderedCategories.map((category, index) => {
+      const segments: StackedChartSegment[] = orderedCategories.map((category) => {
         const value = counts.get(category) ?? 0;
         return {
           label: category,
           value,
-          color: CATEGORY_COLORS[category] ?? categoryPalette[index % categoryPalette.length],
+          color: categoryColor(category),
           percentage: total > 0 ? (value / total) * 100 : 0,
         };
       });
