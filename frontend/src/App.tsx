@@ -522,12 +522,12 @@ function App() {
             ) : null}
           </section> : null}
 
-          <section className="metrics-grid" aria-label="Job order key performance indicators">
+          {page !== "breakdowns" ? <section className="metrics-grid" aria-label="Job order key performance indicators">
             <MetricCard title="Total job orders" value={dataReady ? filteredRecords.length : null} detail="All statuses in selection" icon="orders" tone="metric-card__icon--purple" />
             <MetricCard title="Non-cancelled orders" value={dataReady ? nonCancelledCount : null} detail="Excludes cancelled records" icon="check" tone="metric-card__icon--green" />
             <MetricCard title="Cancelled orders" value={dataReady ? cancelledCount : null} detail="Cancelled status only" icon="ban" tone="metric-card__icon--rose" />
             <MetricCard title="Companies" value={dataReady ? companyCount : null} detail="Distinct companies in selection" icon="building" tone="metric-card__icon--amber" />
-          </section>
+          </section> : null}
 
           {page !== "reports" ? <section className="analytics-section" id="analytics">
             <div className="section-heading">
