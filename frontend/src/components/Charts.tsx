@@ -136,74 +136,83 @@ export function DonutChart({ data, total, onSelect }: DonutChartProps) {
   );
 }
 
-interface StackedBarChartProps {
+
+interface MultiDonutChartProps {
   groups: StackedChartGroup[];
   onSelect: (label: string) => void;
   kind: "status" | "category";
 }
 
-export function StackedBarChart({
-  groups,
-  onSelect,
-  kind,
-}: StackedBarChartProps) {
+export function MultiDonutChart({ groups, onSelect, kind }: MultiDonutChartProps) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const maxValue = useMemo(
-    () => Math.max(1, ...groups.map((group) => group.total)),
-    [groups],
-  );
+  const circumference = 2 * Math.PI * 59;
   const legend = useMemo(() => {
     const seen = new Map<string, string>();
-    groups.forEach((group) =>
-      group.segments.forEach((segment) => seen.set(segment.label, segment.color)),
-    );
+    groups.forEach((group) => group.segments.forEach((segment) => seen.set(segment.label, segment.color)));
     return Array.from(seen.entries()).map(([label, color]) => ({ label, color }));
   }, [groups]);
 
   return (
-    <div className="stacked-chart">
-      <div className="stacked-chart__rows">
-        {groups.map((group) => (
-          <div className="stacked-row" key={group.label}>
-            <div className="stacked-row__meta">
-              <span title={group.label}>{group.label}</span>
-              <strong>{group.total.toLocaleString()}</strong>
-            </div>
-            <div
-              className="stacked-track"
-              role="img"
-              aria-label={`${group.label}, ${group.total} job orders`}
-            >
-              <div
-                className="stacked-track__fill"
-                style={{ width: `${(group.total / maxValue) * 100}%` }}
-              >
-                {group.segments.map((segment) => {
-                  const width = group.total > 0 ? (segment.value / group.total) * 100 : 0;
-                  return (
-                    <button
-                      type="button"
-                      key={segment.label}
-                      className={`stacked-segment ${hovered === segment.label ? "is-highlighted" : ""}`}
-                      style={{ width: `${width}%`, backgroundColor: segment.color }}
-                      title={`${group.label} · ${segment.label}: ${segment.value} (${segment.percentage.toFixed(1)}%)`}
-                      aria-label={`${group.label}, ${segment.label}: ${segment.value}`}
-                      onMouseEnter={() => setHovered(segment.label)}
-                      onMouseLeave={() => setHovered(null)}
-                      onFocus={() => setHovered(segment.label)}
-                      onBlur={() => setHovered(null)}
-                      onClick={() => onSelect(segment.label)}
-                    >
-                      {width >= 17 ? segment.value : null}
-                    </button>
-                  );
-                })}
+    <div className="multi-donut-chart">
+      <div className="multi-donut-chart__grid">
+        {groups.map((group) => {
+          let offset = 0;
+          return (
+            <article className="multi-donut-item" key={group.label}>
+              <div className="multi-donut-item__heading">
+                <strong title={group.label}>{group.label}</strong>
+                <span>{group.total.toLocaleString()}</span>
               </div>
-            </div>
-          </div>
-        ))}
+              <div className="multi-donut-item__visual">
+                <svg viewBox="0 0 170 170" role="img" aria-label={`${group.label}: ${group.total} job orders by ${kind}`}>
+                  <circle cx="85" cy="85" r="59" fill="none" stroke="#f0edf1" strokeWidth="22" />
+                  {group.segments.map((segment) => {
+                    const dash = group.total > 0 ? (segment.value / group.total) * circumference : 0;
+                    const currentOffset = offset;
+                    offset += dash;
+                    return (
+                      <circle
+                        key={segment.label}
+                        className={`donut-segment ${hovered === segment.label ? "is-highlighted" : ""}`}
+                        cx="85"
+                        cy="85"
+                        r="59"
+                        fill="none"
+                        stroke={segment.color}
+                        strokeWidth={hovered === segment.label ? 27 : 22}
+                        strokeDasharray={`${dash} ${circumference - dash}`}
+                        strokeDashoffset={-currentOffset}
+                        transform="rotate(-90 85 85)"
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`${group.label}, ${segment.label}: ${segment.value} job orders`}
+                        onMouseEnter={() => setHovered(segment.label)}
+                        onMouseLeave={() => setHovered(null)}
+                        onFocus={() => setHovered(segment.label)}
+                        onBlur={() => setHovered(null)}
+                        onClick={() => onSelect(segment.label)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onSelect(segment.label);
+                          }
+                        }}
+                      >
+                        <title>{segment.label}: {segment.value} ({segment.percentage.toFixed(1)}%)</title>
+                      </circle>
+                    );
+                  })}
+                </svg>
+                <div className="multi-donut-item__center">
+                  <span>Job Orders</span>
+                  <strong>{group.total.toLocaleString()}</strong>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
-      <div className="chart-legend">
+      <div className="chart-legend multi-donut-chart__legend">
         {legend.map((item) => (
           <button
             className={`chart-legend__item ${hovered === item.label ? "is-highlighted" : ""}`}
@@ -219,10 +228,9 @@ export function StackedBarChart({
         ))}
       </div>
       <p className="chart-footnote">
-        {kind === "status"
-          ? "Select a status segment or legend item to filter the dashboard."
-          : "Select a category segment or legend item to filter the dashboard."}
+        Select a {kind} segment or legend item to filter the dashboard.
       </p>
     </div>
   );
 }
+
