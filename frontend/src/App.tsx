@@ -467,7 +467,11 @@ function App() {
               <h1>{page === "dashboard" ? "Job Order Overview" : page === "breakdowns" ? "Job Order Breakdowns" : "Job Order Reports"}<span>.</span></h1>
               <p>{page === "dashboard" ? "A high-level view of job order activity and operational status." : page === "breakdowns" ? "Explore detailed combinations across companies, statuses, and categories." : "Review and export the current job order distribution."}</p>
             </div>
-            <div className="heading-date"><Icon name="calendar" size={16} /><span>{new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date())}</span></div>
+            {page === "dashboard" ? <div className="overview-date-range">
+  <label><span>From</span><input aria-label="Overview start date" type="date" value={customStart} max={customEnd || undefined} onChange={(event) => { setCustomStart(event.target.value); setDatePreset(event.target.value || customEnd ? "custom" : "all"); }} /></label>
+  <label><span>To</span><input aria-label="Overview end date" type="date" value={customEnd} min={customStart || undefined} onChange={(event) => { setCustomEnd(event.target.value); setDatePreset(event.target.value || customStart ? "custom" : "all"); }} /></label>
+  {(customStart || customEnd) ? <button type="button" onClick={() => { setCustomStart(""); setCustomEnd(""); setDatePreset("all"); }}>Clear</button> : null}
+</div> : null}
           </section>
 
           {sourceState === "error" ? (
@@ -518,7 +522,7 @@ function App() {
 
           {page !== "reports" ? <section className="analytics-section" id="analytics">
             <div className="section-heading">
-              <div><span className="eyebrow">DATA VISUALIZATION</span><h2>Job order breakdown</h2><p>Explore how work is distributed across companies, statuses, and categories.</p></div>
+              <div><span className="eyebrow">DATA VISUALIZATION</span><h2>{page === "dashboard" ? "Fleet activity at a glance" : "Job order breakdown"}</h2><p>Explore how work is distributed across companies, statuses, and categories.</p></div>
               <div className="record-count"><span className="record-count__dot" />{dataReady ? `${filteredRecords.length.toLocaleString()} records` : "Awaiting data"}</div>
             </div>
 
