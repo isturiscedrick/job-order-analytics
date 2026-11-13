@@ -177,10 +177,11 @@ export function StatusBarChart({ data, onSelect }: StatusBarChartProps) {
 
 interface StackedBarChartProps {
   groups: StackedChartGroup[];
+  selectedCategories?: string[];
   onSelect: (label: string) => void;
 }
 
-export function StackedBarChart({ groups, onSelect }: StackedBarChartProps) {
+export function StackedBarChart({ groups, selectedCategories = [], onSelect }: StackedBarChartProps) {
   const [hovered, setHovered] = useState<string | null>(null);
   const legend = new Map<string, string>();
   groups.forEach((group) => group.segments.forEach((segment) => legend.set(segment.label, segment.color)));
@@ -199,7 +200,7 @@ export function StackedBarChart({ groups, onSelect }: StackedBarChartProps) {
                 <button
                   type="button"
                   key={segment.label}
-                  className={`stacked-track__fill ${hovered === segment.label ? "is-highlighted" : ""}`}
+                  className={`stacked-track__fill ${hovered === segment.label ? "is-highlighted" : ""} ${selectedCategories.length > 0 && !selectedCategories.includes(segment.label) ? "is-dimmed" : ""} ${selectedCategories.includes(segment.label) ? "is-selected" : ""}`}
                   style={{ width: `${segment.percentage}%`, backgroundColor: segment.color }}
                   title={`${segment.label}: ${segment.value} (${segment.percentage.toFixed(1)}%)`}
                   aria-label={`${group.label}, ${segment.label}: ${segment.value} job orders. Filter by category.`}
@@ -220,7 +221,7 @@ export function StackedBarChart({ groups, onSelect }: StackedBarChartProps) {
         {Array.from(legend.entries()).map(([label, color]) => (
           <button
             type="button"
-            className={`chart-legend__item ${hovered === label ? "is-highlighted" : ""}`}
+            className={`chart-legend__item ${hovered === label ? "is-highlighted" : ""} ${selectedCategories.length > 0 && !selectedCategories.includes(label) ? "is-dimmed" : ""} ${selectedCategories.includes(label) ? "is-selected" : ""}`}
             key={label}
             onMouseEnter={() => setHovered(label)}
             onMouseLeave={() => setHovered(null)}
