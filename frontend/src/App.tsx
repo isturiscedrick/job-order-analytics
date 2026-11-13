@@ -524,16 +524,16 @@ function App() {
 
             <div className="charts-grid">
               <ChartCard title="Job orders per company" description="Share of non-cancelled job orders by requesting company." action="DISTRIBUTION">
-                {!dataReady ? <div className="chart-skeleton"><i /><i /><i /></div> : companyData.length > 0 ? <DonutChart data={companyData} total={companyData.reduce((sum, item) => sum + item.value, 0)} onSelect={selectCompany} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
+                {!dataReady ? <div className="chart-skeleton"><i /><i /><i /></div> : companyData.length > 0 ? <DonutChart data={companyData} total={companyData.reduce((sum, item) => sum + item.value, 0)} onSelect={(label) => { selectCompany(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
               </ChartCard>
 
               <ChartCard title="Company by status" description="Compare non-cancelled job order statuses across companies." action="STATUS MIX">
-                {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : statusData.length > 0 ? <StackedBarChart groups={statusData} kind="status" onSelect={selectStatus} /> : <EmptyChart title={chartEmptyTitle} description={sourceState === "ready" && filteredRecords.length > 0 ? "Cancelled records are excluded from this chart by design." : chartEmptyDescription} />}
+                {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : statusData.length > 0 ? <StackedBarChart groups={statusData} kind="status" onSelect={(label) => { selectStatus(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={sourceState === "ready" && filteredRecords.length > 0 ? "Cancelled records are excluded from this chart by design." : chartEmptyDescription} />}
               </ChartCard>
 
               <div className="charts-grid__wide">
                 <ChartCard title="Company by job order category" description="Compare category volume for each company. Cancelled records remain included in this view." action="CATEGORY MIX">
-                  {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : categoryData.length > 0 ? <StackedBarChart groups={categoryData} kind="category" onSelect={selectCategory} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
+                  {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : categoryData.length > 0 ? <StackedBarChart groups={categoryData} kind="category" onSelect={(label) => { selectCategory(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
                 </ChartCard>
               </div>
             </div>
