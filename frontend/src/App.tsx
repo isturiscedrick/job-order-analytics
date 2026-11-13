@@ -214,8 +214,7 @@ function MetricCard({
       </div>
       <div className="metric-card__copy">
         <span>{title}</span>
-        <strong>{value === null ? "—" : value.toLocaleString()}</strong>
-        <small>{detail}</small>
+        {value === null ? <><i className="skeleton skeleton--metric" /><i className="skeleton skeleton--caption" /></> : <><strong>{value.toLocaleString()}</strong><small>{detail}</small></>}
       </div>
       <span className="metric-card__spark" aria-hidden="true">
         <Icon name="activity" size={29} />
@@ -490,24 +489,11 @@ function App() {
               <button type="button" className="clear-filters" onClick={resetFilters} disabled={!hasFilters}>Reset filters <span>↺</span></button>
             </div>
             <div className={`filter-controls ${filtersOpen ? "filter-controls--open" : ""}`}>
-              <label className="date-filter">
-                <span>Date range</span>
-                <select value={datePreset} onChange={(event) => setDatePreset(event.target.value as DatePreset)}>
-                  <option value="all">All time</option>
-                  <option value="today">Today</option>
-                  <option value="last7">Last 7 days</option>
-                  <option value="last30">Last 30 days</option>
-                  <option value="thisMonth">This month</option>
-                  <option value="lastMonth">Last month</option>
-                  <option value="custom">Custom range</option>
-                </select>
-              </label>
-              {datePreset === "custom" ? (
-                <div className="custom-date-range">
-                  <label><span>From</span><input type="date" value={customStart} max={customEnd || undefined} onChange={(event) => setCustomStart(event.target.value)} /></label>
-                  <label><span>To</span><input type="date" value={customEnd} min={customStart || undefined} onChange={(event) => setCustomEnd(event.target.value)} /></label>
-                </div>
-              ) : null}
+              <div className="custom-date-range date-range-picker">
+                <label><span>Start date</span><input aria-label="Start date" type="date" value={customStart} max={customEnd || undefined} onChange={(event) => { setCustomStart(event.target.value); setDatePreset(event.target.value || customEnd ? "custom" : "all"); }} /></label>
+                <label><span>End date</span><input aria-label="End date" type="date" value={customEnd} min={customStart || undefined} onChange={(event) => { setCustomEnd(event.target.value); setDatePreset(event.target.value || customStart ? "custom" : "all"); }} /></label>
+                {(customStart || customEnd) ? <button type="button" className="date-clear" onClick={() => { setCustomStart(""); setCustomEnd(""); setDatePreset("all"); }}>Clear dates</button> : null}
+              </div>
               <FilterDropdown title="Company" options={companyOptions} selected={companyFilters} onChange={setCompanyFilters} open={openDropdown === "company"} onOpenChange={(value) => setOpenDropdown(value ? "company" : null)} />
               <FilterDropdown title="Status" options={statusOptions} selected={statusFilters} onChange={setStatusFilters} open={openDropdown === "status"} onOpenChange={(value) => setOpenDropdown(value ? "status" : null)} />
               <FilterDropdown title="Job Order category" options={categoryOptions} selected={categoryFilters} onChange={setCategoryFilters} open={openDropdown === "category"} onOpenChange={(value) => setOpenDropdown(value ? "category" : null)} />
@@ -538,16 +524,16 @@ function App() {
 
             <div className="charts-grid">
               <ChartCard title="Job orders per company" description="Share of non-cancelled job orders by requesting company." action="DISTRIBUTION">
-                {companyData.length > 0 ? <DonutChart data={companyData} total={companyData.reduce((sum, item) => sum + item.value, 0)} onSelect={selectCompany} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
+                {!dataReady ? <div className="chart-skeleton"><i /><i /><i /></div> : companyData.length > 0 ? <DonutChart data={companyData} total={companyData.reduce((sum, item) => sum + item.value, 0)} onSelect={selectCompany} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
               </ChartCard>
 
               <ChartCard title="Company by status" description="Compare non-cancelled job order statuses across companies." action="STATUS MIX">
-                {statusData.length > 0 ? <StackedBarChart groups={statusData} kind="status" onSelect={selectStatus} /> : <EmptyChart title={chartEmptyTitle} description={sourceState === "ready" && filteredRecords.length > 0 ? "Cancelled records are excluded from this chart by design." : chartEmptyDescription} />}
+                {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : statusData.length > 0 ? <StackedBarChart groups={statusData} kind="status" onSelect={selectStatus} /> : <EmptyChart title={chartEmptyTitle} description={sourceState === "ready" && filteredRecords.length > 0 ? "Cancelled records are excluded from this chart by design." : chartEmptyDescription} />}
               </ChartCard>
 
               <div className="charts-grid__wide">
                 <ChartCard title="Company by job order category" description="Compare category volume for each company. Cancelled records remain included in this view." action="CATEGORY MIX">
-                  {categoryData.length > 0 ? <StackedBarChart groups={categoryData} kind="category" onSelect={selectCategory} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
+                  {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : categoryData.length > 0 ? <StackedBarChart groups={categoryData} kind="category" onSelect={selectCategory} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
                 </ChartCard>
               </div>
             </div>
