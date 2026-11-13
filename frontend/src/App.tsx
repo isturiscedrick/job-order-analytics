@@ -130,8 +130,17 @@ function groupCounts(
     const label = getLabel(record);
     counts.set(label, (counts.get(label) ?? 0) + 1);
   });
+  // Assign colors by a stable alphabetical order so separate companies never
+  // collide simply because their label hashes map to the same palette index.
+  const colorByLabel = new Map(
+    uniqueSorted(Array.from(counts.keys())).map((label, index) => [
+      label,
+      palette[index % palette.length],
+    ]),
+  );
+
   return Array.from(counts.entries())
-    .map(([label, value]) => ({ label, value, color: stableColor(label, palette) }))
+    .map(([label, value]) => ({ label, value, color: colorByLabel.get(label) ?? palette[0] }))
     .sort((a, b) => b.value - a.value);
 }
 
