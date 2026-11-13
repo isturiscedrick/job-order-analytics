@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChartCard, DonutChart, EmptyChart, MultiDonutChart } from "./components/Charts";
+import { ChartCard, DonutChart, EmptyChart, StackedBarChart, StatusBarChart } from "./components/Charts";
 import { fetchHealth, fetchJobOrders } from "./services/api";
 import type {
   ChartDatum,
@@ -369,9 +369,8 @@ function App() {
   );
 
   const statusData = useMemo(
-    () => groupedSegments(
+    () => groupCounts(
       nonCancelledRecords,
-      (record) => fieldLabel(record.req_comp, "Unspecified company"),
       (record) => fieldLabel(record.req_current_status, "Unspecified status"),
       statusPalette,
     ),
@@ -540,13 +539,13 @@ function App() {
                 {!dataReady ? <div className="chart-skeleton"><i /><i /><i /></div> : companyData.length > 0 ? <DonutChart data={companyData} total={companyData.reduce((sum, item) => sum + item.value, 0)} onSelect={(label) => { selectCompany(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
               </ChartCard>
 
-              <ChartCard title="Company by status" description="Compare non-cancelled job order statuses across companies." action="STATUS MIX">
-                {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : statusData.length > 0 ? <MultiDonutChart groups={statusData} kind="status" onSelect={(label) => { selectStatus(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={sourceState === "ready" && filteredRecords.length > 0 ? "Cancelled records are excluded from this chart by design." : chartEmptyDescription} />}
+              <ChartCard title="Job Orders by Status" description="Compare the volume of non-cancelled job orders in each status." action="STATUS MIX">
+                {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : statusData.length > 0 ? <StatusBarChart data={statusData} onSelect={(label) => { selectStatus(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={sourceState === "ready" && filteredRecords.length > 0 ? "Cancelled records are excluded from this chart by design." : chartEmptyDescription} />}
               </ChartCard>
 
               <div className="charts-grid__wide">
-                <ChartCard title="Company by job order category" description="Compare category volume for each company. Cancelled records remain included in this view." action="CATEGORY MIX">
-                  {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : categoryData.length > 0 ? <MultiDonutChart groups={categoryData} kind="category" onSelect={(label) => { selectCategory(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
+                <ChartCard title="Job Orders by Category" description="Compare total job orders and category composition for each company. Cancelled records remain included." action="CATEGORY MIX">
+                  {!dataReady ? <div className="chart-skeleton chart-skeleton--bars"><i /><i /><i /><i /></div> : categoryData.length > 0 ? <StackedBarChart groups={categoryData} onSelect={(label) => { selectCategory(label); if (page === "dashboard") navigate("breakdowns"); }} /> : <EmptyChart title={chartEmptyTitle} description={chartEmptyDescription} />}
                 </ChartCard>
               </div>
             </div>
