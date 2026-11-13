@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChartCard, DonutChart, EmptyChart, StackedBarChart } from "./components/Charts";
 import { fetchHealth, fetchJobOrders } from "./services/api";
 import type {
@@ -12,9 +12,9 @@ import type {
 
 type SourceState = "loading" | "ready" | "error";
 
-const companyPalette = ["#4F15D6", "#FA8DA0", "#B259CD", "#87755C", "#AEA1C3", "#4F92A6", "#D58D4A", "#7E8D62"];
-const statusPalette = ["#4F15D6", "#2B9A80", "#E3A348", "#E36D8B", "#6D84C5", "#9D79B8", "#70817C"];
-const categoryPalette = ["#B259CD", "#4F15D6", "#FA8DA0", "#4F92A6", "#D58D4A", "#7E8D62", "#AEA1C3", "#87755C"];
+const companyPalette = ["#548FC4", "#E79A25", "#7B623D", "#9C83D8", "#6D9B86", "#D77D61", "#7B83BD", "#C78BA8"];
+const statusPalette = ["#548FC4", "#6D9B86", "#E79A25", "#D66B68", "#8A79BC", "#7B83BD", "#8B929B"];
+const categoryPalette = ["#548FC4", "#E79A25", "#7B623D", "#9C83D8", "#6D9B86", "#D77D61", "#7B83BD", "#8B929B"];
 
 
 function iconPath(name: string) {
@@ -166,44 +166,32 @@ function groupedSegments(
     .sort((a, b) => b.total - a.total);
 }
 
-function FilterDropdown({
-  title,
-  options,
-  selected,
-  onChange,
-}: {
-  title: string;
-  options: string[];
-  selected: string[];
-  onChange: (next: string[]) => void;
+function FilterDropdown({ title, options, selected, onChange, open, onOpenChange }: {
+  title: string; options: string[]; selected: string[]; onChange: (next: string[]) => void;
+  open: boolean; onOpenChange: (open: boolean) => void;
 }) {
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) onOpenChange(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") onOpenChange(false); };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", outside); document.removeEventListener("keydown", escape); };
+  }, [open, onOpenChange]);
   const toggle = (value: string) => {
-    onChange(selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]);
+    onChange(selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value]);
+    onOpenChange(false);
   };
-
-  return (
-    <details className="filter-dropdown">
-      <summary>
-        <span>{title}</span>
-        {selected.length > 0 ? <b>{selected.length}</b> : null}
-        <Icon name="chevron" size={15} />
-      </summary>
-      <div className="filter-dropdown__menu">
-        {options.length === 0 ? (
-          <p className="filter-dropdown__empty">No available options</p>
-        ) : options.map((option) => (
-          <label className="filter-option" key={option}>
-            <input
-              type="checkbox"
-              checked={selected.includes(option)}
-              onChange={() => toggle(option)}
-            />
-            <span>{option}</span>
-          </label>
-        ))}
-      </div>
-    </details>
-  );
+  return <div ref={root} className={"filter-dropdown " + (open ? "filter-dropdown--open" : "")}>
+    <button type="button" className="filter-dropdown__trigger" aria-expanded={open} onClick={() => onOpenChange(!open)}>
+      <span>{title}</span>{selected.length ? <b>{selected.length}</b> : null}<Icon name="chevron" size={15}/>
+    </button>
+    {open ? <div className="filter-dropdown__menu">
+      {options.length === 0 ? <p className="filter-dropdown__empty">No available options</p> : options.map(option =>
+        <label className="filter-option" key={option}><input type="checkbox" checked={selected.includes(option)} onChange={() => toggle(option)}/><span>{option}</span></label>)}
+    </div> : null}
+  </div>;
 }
 
 function MetricCard({
