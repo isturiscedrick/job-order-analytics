@@ -136,11 +136,26 @@ function groupCounts(
     .sort((a, b) => b.value - a.value);
 }
 
+// Canonical category sequence and colors are independent of API order,
+// record counts, and active filters. Keep these mappings stable for comparisons.
+const CATEGORY_ORDER = [
+  "Motorpool",
+  "For Branch Visit",
+  "Tie Up Shop",
+  "Refurbish MC",
+] as const;
+
+const CATEGORY_COLORS: Record<string, string> = {
+  "Motorpool": "#E79A25",
+  "For Branch Visit": "#6D9B86",
+  "Tie Up Shop": "#D77D61",
+  "Refurbish MC": "#7B83BD",
+};
+
 function groupedSegments(
   records: JobOrderRecord[],
   groupField: (record: JobOrderRecord) => string,
   segmentField: (record: JobOrderRecord) => string,
-  palette: string[],
 ): StackedChartGroup[] {
   const groups = new Map<string, Map<string, number>>();
   records.forEach((record) => {
@@ -151,25 +166,31 @@ function groupedSegments(
     groups.set(group, segmentCounts);
   });
 
-  // Give each status/category one consistent palette color across every company.
-  const segmentLabels = uniqueSorted(
+  // Keep the known business categories first in the same order for every
+  // company. Any additional API categories follow in a stable alphabetical
+  // order, never by count or API/object insertion order.
+  const discoveredCategories = uniqueSorted(
     Array.from(groups.values()).flatMap((counts) => Array.from(counts.keys())),
   );
-  const colorByLabel = new Map(
-    segmentLabels.map((label, index) => [label, palette[index % palette.length]]),
-  );
+  const orderedCategories = [
+    ...CATEGORY_ORDER,
+    ...discoveredCategories.filter(
+      (category) => !CATEGORY_ORDER.includes(category as (typeof CATEGORY_ORDER)[number]),
+    ),
+  ];
 
   return Array.from(groups.entries())
     .map(([label, counts]) => {
       const total = Array.from(counts.values()).reduce((sum, value) => sum + value, 0);
-      const segments: StackedChartSegment[] = Array.from(counts.entries())
-        .map(([segmentLabel, value]) => ({
-          label: segmentLabel,
+      const segments: StackedChartSegment[] = orderedCategories.map((category, index) => {
+        const value = counts.get(category) ?? 0;
+        return {
+          label: category,
           value,
-          color: colorByLabel.get(segmentLabel) ?? palette[0],
+          color: CATEGORY_COLORS[category] ?? categoryPalette[index % categoryPalette.length],
           percentage: total > 0 ? (value / total) * 100 : 0,
-        }))
-        .sort((a, b) => b.value - a.value);
+        };
+      });
       return { label, total, segments };
     })
     .sort((a, b) => b.total - a.total);
@@ -384,7 +405,6 @@ function App() {
       filteredRecords,
       (record) => fieldLabel(record.req_comp, "Unspecified company"),
       (record) => fieldLabel(record.jo_category, "Unspecified category"),
-      categoryPalette,
     ),
     [filteredRecords],
   );
