@@ -554,7 +554,7 @@ function App() {
               }}>Export CSV</button>
             </div>
             <div className="report-table-wrap"><table className="report-table"><thead><tr><th>Company</th><th>Non-cancelled job orders</th><th>Share</th></tr></thead><tbody>
-              {companyData.map(item => <tr key={item.label}><td>{item.label}</td><td>{item.value.toLocaleString()}</td><td>{((item.value / Math.max(1, nonCancelledCount)) * 100).toFixed(1)}%</td></tr>)}
+              {!dataReady ? Array.from({ length: 5 }, (_, index) => <tr key={index}><td colSpan={3}><i className="skeleton skeleton--table" /></td></tr>) : companyData.map(item => <tr key={item.label}><td>{item.label}</td><td>{item.value.toLocaleString()}</td><td>{((item.value / Math.max(1, nonCancelledCount)) * 100).toFixed(1)}%</td></tr>)}
               {companyData.length === 0 ? <tr><td colSpan={3}>No report data is available.</td></tr> : null}
             </tbody></table></div>
           </section> : null}
