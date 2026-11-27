@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type {
+  CategoryBarGroup,
   ChartDatum,
-  StackedChartGroup,
 } from "../types/job-order";
 
 interface ChartCardProps {
@@ -175,87 +175,110 @@ export function StatusBarChart({ data, onSelect }: StatusBarChartProps) {
   );
 }
 
-interface StackedBarChartProps {
-  groups: StackedChartGroup[];
-  selectedCategories?: string[];
-  onSelect: (label: string) => void;
+// Round the tallest bar up to a clean axis maximum (1, 2, 5 x 10^n) with about four steps.
+function niceScale(max: number): { top: number; ticks: number[] } {
+  if (max <= 0) return { top: 4, ticks: [0, 1, 2, 3, 4] };
+  const rough = max / 4;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rough)));
+  const residual = rough / magnitude;
+  const step = Math.max(1, (residual <= 1 ? 1 : residual <= 2 ? 2 : residual <= 5 ? 5 : 10) * magnitude);
+  const top = Math.ceil(max / step) * step;
+  const ticks: number[] = [];
+  for (let value = 0; value <= top; value += step) ticks.push(value);
+  return { top, ticks };
 }
 
-export function StackedBarChart({ groups, selectedCategories = [], onSelect }: StackedBarChartProps) {
-  const [hovered, setHovered] = useState<string | null>(null);
-  const legend = new Map<string, string>();
-  groups.forEach((group) => group.segments.forEach((segment) => legend.set(segment.label, segment.color)));
+interface CategoryBarChartProps {
+  groups: CategoryBarGroup[];
+  selectedCategories?: string[];
+  selectedCompanies?: string[];
+  onSelectCategory: (category: string) => void;
+  onSelectCompany: (company: string) => void;
+}
 
-  // Rank by selected-category count when a category filter is active.
-  // Otherwise, keep the overall company-total ranking.
-  const rankedGroups = groups
-    .map((group) => ({
-      group,
-      displayedTotal: selectedCategories.length > 0
-        ? group.segments
-            .filter((segment) => selectedCategories.includes(segment.label))
-            .reduce((sum, segment) => sum + segment.value, 0)
-        : group.total,
-    }))
-    .sort((a, b) =>
-      b.displayedTotal - a.displayedTotal || a.group.label.localeCompare(b.group.label),
-    );
+export function CategoryBarChart({ groups, selectedCategories = [], selectedCompanies = [], onSelectCategory, onSelectCompany }: CategoryBarChartProps) {
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  // A category selection hides the other categories' bars in every company, as the filter does for the rest of the page.
+  const visible = groups.map((group) => ({
+    ...group,
+    bars: selectedCategories.length > 0 ? group.bars.filter((bar) => selectedCategories.includes(bar.category)) : group.bars,
+  }));
+  const legend = visible[0]?.bars ?? [];
+  const { top, ticks } = niceScale(Math.max(0, ...visible.flatMap((group) => group.bars.map((bar) => bar.value))));
+  const minWidth = 48 + visible.length * (legend.length * 34 + 72);
 
   return (
-    <div className="stacked-chart">
-      <div className="stacked-chart__rows">
-        {rankedGroups.map(({ group, displayedTotal }) => (
-          <div className="stacked-row" key={group.label}>
-            <div className="stacked-row__meta">
-              <span title={group.label}>{group.label}</span>
-              <strong title={selectedCategories.length > 0 ? "Selected category total for this company" : "Total job orders for this company"}>{displayedTotal.toLocaleString()}</strong>
-            </div>
-            <div className="stacked-track" role="group" aria-label={`${group.label}: ${displayedTotal} job orders in ${selectedCategories.length > 0 ? "selected categories" : "all categories"}`}>
-              {group.segments
-                // A category selection hides the other segments, but retains
-                // each visible segment's percentage of the complete company
-                // total. Rendering the selected segments first naturally
-                // aligns them to the left without stretching them to 100%.
-                .filter((segment) =>
-                  selectedCategories.length === 0 || selectedCategories.includes(segment.label),
-                )
-                .map((segment) => (
-                  <button
-                    type="button"
-                    key={segment.label}
-                    className={`stacked-track__fill ${hovered === segment.label ? "is-highlighted" : ""} ${selectedCategories.includes(segment.label) ? "is-selected" : ""}`}
-                    style={{ width: `${segment.percentage}%`, backgroundColor: segment.color }}
-                    title={`${segment.label}: ${segment.value} (${segment.percentage.toFixed(1)}% of company total)`}
-                    aria-label={`${group.label}, ${segment.label}: ${segment.value} job orders, ${segment.percentage.toFixed(1)}% of company total. Filter by category.`}
-                    onMouseEnter={() => setHovered(segment.label)}
-                    onMouseLeave={() => setHovered(null)}
-                    onFocus={() => setHovered(segment.label)}
-                    onBlur={() => setHovered(null)}
-                    onClick={() => onSelect(segment.label)}
-                  >
-                    {segment.percentage >= 9 ? segment.value.toLocaleString() : null}
-                  </button>
+    <div className="category-chart">
+      <div className="category-chart__scroll">
+        <div className="category-chart__plot" style={{ minWidth }}>
+          <div className="category-chart__axis" aria-hidden="true">
+            {ticks.map((tick) => (
+              <span key={tick} style={{ bottom: `${(tick / top) * 100}%` }}>{tick.toLocaleString()}</span>
+            ))}
+          </div>
+          <div className="category-chart__body">
+            <div className="category-chart__area">
+              {ticks.map((tick) => (
+                <i className="category-chart__gridline" key={tick} style={{ bottom: `${(tick / top) * 100}%` }} aria-hidden="true" />
+              ))}
+              <div className="category-chart__groups">
+                {visible.map((group) => (
+                  <div className="category-group" key={group.company} role="group" aria-label={`${group.company}: ${group.total} job orders`}>
+                    {group.bars.map((bar) => {
+                      const height = (bar.value / top) * 100;
+                      return (
+                        <button
+                          type="button"
+                          key={bar.category}
+                          className={`category-bar ${hovered !== null && hovered !== bar.category ? "is-dimmed" : ""}`}
+                          title={`${group.company} - ${bar.category}: ${bar.value.toLocaleString()}`}
+                          aria-label={`${group.company}, ${bar.category}: ${bar.value} job orders. Filter by this category.`}
+                          onMouseEnter={() => setHovered(bar.category)}
+                          onMouseLeave={() => setHovered(null)}
+                          onFocus={() => setHovered(bar.category)}
+                          onBlur={() => setHovered(null)}
+                          onClick={() => onSelectCategory(bar.category)}
+                        >
+                          <span className="category-bar__value" style={{ bottom: `calc(${height}% + 5px)` }}>{bar.value.toLocaleString()}</span>
+                          <span className="category-bar__fill" style={{ height: `${height}%`, backgroundColor: bar.color }} />
+                        </button>
+                      );
+                    })}
+                  </div>
                 ))}
+              </div>
+            </div>
+            <div className="category-chart__labels">
+              {visible.map((group) => (
+                <button
+                  type="button"
+                  key={group.company}
+                  title={group.company}
+                  className={`category-chart__label ${selectedCompanies.includes(group.company) ? "is-selected" : ""}`}
+                  onClick={() => onSelectCompany(group.company)}
+                >
+                  {group.company}
+                </button>
+              ))}
             </div>
           </div>
-        ))}
+        </div>
       </div>
-      <div className="chart-legend">
-        {Array.from(legend.entries()).map(([label, color]) => (
-          <button
-            type="button"
-            className={`chart-legend__item ${hovered === label ? "is-highlighted" : ""} ${selectedCategories.includes(label) ? "is-selected" : ""}`}
-            key={label}
-            onMouseEnter={() => setHovered(label)}
+      <ul className="category-chart__legend" aria-label="Categories">
+        {legend.map((bar) => (
+          <li
+            key={bar.category}
+            className={hovered === bar.category ? "is-highlighted" : ""}
+            onMouseEnter={() => setHovered(bar.category)}
             onMouseLeave={() => setHovered(null)}
-            onClick={() => onSelect(label)}
           >
-            <span style={{ backgroundColor: color }} />
-            {label}
-          </button>
+            <span style={{ backgroundColor: bar.color }} />
+            {bar.category}
+          </li>
         ))}
-      </div>
-      <p className="chart-footnote">Select a category segment or legend item to filter the dashboard.</p>
+      </ul>
+      <p className="chart-footnote">Select a bar to filter by its category, or a company name to filter by company.</p>
     </div>
   );
 }

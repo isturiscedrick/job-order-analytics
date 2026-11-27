@@ -3,20 +3,20 @@ export interface JobOrderRecord {
   req_current_status: string | null;
   req_date: string | null;
   jo_category: string | null;
+  accept_status: string | null;
+  jo_closed_status: string | null;
 }
-
-export type DatePreset =
-  | "all"
-  | "today"
-  | "last7"
-  | "last30"
-  | "thisMonth"
-  | "lastMonth"
-  | "custom";
 
 export interface DateBounds {
   start: string | null;
   end: string | null;
+}
+
+export interface OverviewCounts {
+  total: number;
+  forApproval: number;
+  active: number;
+  closed: number;
 }
 
 export interface ChartDatum {
@@ -25,12 +25,14 @@ export interface ChartDatum {
   color: string;
 }
 
-export interface StackedChartSegment extends ChartDatum {
-  percentage: number;
+export interface CategoryBar {
+  category: string;
+  value: number;
+  color: string;
 }
 
-export interface StackedChartGroup {
-  label: string;
+export interface CategoryBarGroup {
+  company: string;
   total: number;
-  segments: StackedChartSegment[];
+  bars: CategoryBar[];
 }
